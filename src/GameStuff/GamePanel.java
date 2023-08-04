@@ -2,6 +2,8 @@ package GameStuff;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 //I should research these
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
@@ -26,7 +28,7 @@ public class GamePanel extends JPanel implements ActionListener {
     static final int x[] = new int[GAME_UNITS]; //Snake size, as it can't outgrow the game.
     static final int y[] = new int[GAME_UNITS];
     
-    int bodyParts = 2; //Snake size.
+    int bodyParts = 6; //Snake size.
     int applesEaten = 0; //Default is zero.
     int appleX; // Apple's coordinate
     int appleY;
@@ -64,36 +66,49 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void draw( Graphics g )  {
-        //Make grids collumns
-        for( int i = 0; i < SCREEN_HEIGHT/UNIT_SIZE ; i++ )  {
-            //Explain these lines to yourself later. It is a grid, but try to understand how graphics are made.
-            
-            g.drawLine( i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT ); 
-            g.drawLine( 0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE );  
-            g.setColor( Color.green );
-        }
-        g.setColor(Color.orange);
-        g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
-        //snake parts
-        for( int i = 0; i < bodyParts; i++ )    {
-            if(i == 0)  {
+        if(isRunning)   {
+                //Make grids collumns
+                /*
+            for( int i = 0; i < SCREEN_HEIGHT/UNIT_SIZE ; i++ )  {
+                //Explain these lines to yourself later. It is a grid, but try to understand how graphics are made.
+                
+                g.drawLine( i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT ); 
+                g.drawLine( 0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE );  
                 g.setColor( Color.green );
-                g.fillRect( x[i], y[i], UNIT_SIZE, UNIT_SIZE );
-            }else   {
-                g.setColor( new Color(45,100,0) );
-                g.fillRect( x[i], y[i], UNIT_SIZE, UNIT_SIZE);
             }
+            */
+            g.setColor(Color.orange);
+            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+            //snake parts
+
+            for( int i = 0; i < bodyParts; i++ )    {
+                if(i == 0)  {
+                    g.setColor( Color.green );
+                    g.fillRect( x[i], y[i], UNIT_SIZE, UNIT_SIZE );
+                }else   {
+                    g.setColor( new Color(45,100,0) );
+                    g.fillRect( x[i], y[i], UNIT_SIZE, UNIT_SIZE );
+                }
+            }
+            g.setColor(Color.white);
+            g.setFont(new Font("Ink Free", Font.ITALIC, 75));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            g.drawString("Points" + " " + applesEaten*100, (SCREEN_WIDTH - metrics.stringWidth("Points" + applesEaten*10))/2, g.getFont().getSize());
+
+        }
+        else{
+            gameOver(g);
         }
         
 
     }
 
     public void movements() {
-        // Didn't quite get it. Understand later.
+        // Create the entire snakes
         for( int i = bodyParts; i > 0; i-- )  {
             
             x[i] = x[i - 1];
-            y[i]= x[i - 1];
+            y[i] = y[i - 1];
 
         }
         switch( direction ) {
@@ -113,11 +128,40 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void checkPoints()   {
-
+        if((x[0] == appleX) && (y[0] == appleY))    {
+            bodyParts++;
+            applesEaten++;
+            newApple();
+        }
     }
 
     public void checkCollisions()   {
-
+        // check if head collides with border
+        for(int i = bodyParts; i > 0; i--)  {
+            if( (x[0] == x[i]) && (y[0] == y[i]) )  {
+                
+                isRunning = false;
+            }
+        }
+        //check left border
+        if( x[0] < 0 )  {
+            isRunning = false;
+        }
+        // right
+        if( x[0] > SCREEN_WIDTH)    {
+            isRunning = false;
+        }
+        // top
+         if( y[0] < 0 )  {
+            isRunning = false;
+        }
+        // bottom
+        if( y[0] > SCREEN_HEIGHT)    {
+            isRunning = false;
+        }
+        if(!isRunning)  {
+            timer.stop();
+        }
     }
 
     public void newApple()  {
@@ -127,8 +171,11 @@ public class GamePanel extends JPanel implements ActionListener {
        
     }
 
-    public void gameOver()  {
-
+    public void gameOver(Graphics g)  {
+        g.setColor(Color.red);
+        g.setFont(new Font("Ink Free", Font.ITALIC, 75));
+        FontMetrics metrics = getFontMetrics(g.getFont());
+        g.drawString("Too Bad" + " " + applesEaten * 10, (SCREEN_WIDTH - metrics.stringWidth("Too Bad"))/3, SCREEN_HEIGHT/2);
     }
 
     @Override
@@ -147,7 +194,28 @@ public class GamePanel extends JPanel implements ActionListener {
     public class MyKeyAdapter extends KeyAdapter    {
         @Override
         public void keyPressed( KeyEvent e )    {
-            
+            //the snake will have to turn when going to the oposite direction, else the game will break.
+            switch(e.getKeyCode())  {
+                case KeyEvent.VK_LEFT:
+                    if(direction != 'R')    {
+                        direction = 'L';
+                    }
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    if(direction != 'L')    {
+                        direction = 'R';
+                    }
+                    break;
+                case KeyEvent.VK_UP:
+                    if(direction != 'D')    {
+                        direction = 'U';
+                    }
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if(direction != 'U')    {
+                        direction = 'D';
+                    }
+            }
         }
     }
 
